@@ -5,7 +5,11 @@ staticfiles
 models
 mainapp/static/mainapp
 node_modules
+<<<<<<< Updated upstream
 .venv/
 venv/
 __pycache__/
 *.pyc
+=======
+.venv
+>>>>>>> Stashed changes

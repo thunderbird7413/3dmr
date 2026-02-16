@@ -32,11 +32,20 @@ def validate_glb_file(file_field):
             "The uploaded file does not appear to be a valid GLB file."
         )
 
+<<<<<<< Updated upstream
     with tempfile.NamedTemporaryFile(suffix=".glb") as temp_file:
         for chunk in file_field.chunks():
             temp_file.write(chunk)
         temp_file.flush()
 
+=======
+    # fd, temp_path = tempfile.mkstemp(suffix=".glb")
+    with tempfile.NamedTemporaryFile(suffix=".glb", delete_on_close=False) as temp_file:
+    
+        for chunk in file_field.chunks():
+            temp_file.write(chunk)
+        
+>>>>>>> Stashed changes
         try:
             result = subprocess.run(
                 [settings.GLTF_VALIDATOR, temp_file.name, "-o"],
@@ -76,3 +85,8 @@ def validate_glb_file(file_field):
             logger.exception("Invalid gltf_validator output!\
                             It seems gltf_validator's 'validation.schema.json' file has been modified.")
             raise ValidationError("Internal server error.")
+<<<<<<< Updated upstream
+=======
+    if os.path.exists(temp_file.name):
+        os.remove(temp_file.name)
+>>>>>>> Stashed changes
