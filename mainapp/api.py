@@ -4,7 +4,7 @@ import os
 
 from django.conf import settings
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse, FileResponse, Http404, HttpResponseBadRequest, HttpResponseServerError
+from django.http import JsonResponse, HttpResponse, Http404, HttpResponseBadRequest, HttpResponseServerError
 from django.core.paginator import Paginator, EmptyPage
 from .models import Model
 from .utils import get_kv, admin
@@ -86,9 +86,14 @@ def get_model(request, model_id, revision=None):
     if not os.path.isfile(model_path):
         return HttpResponseServerError('Model file not found on the server')
     
-    response = FileResponse(open(model_path, 'rb'))
+    with open(model_path, 'rb') as f:
+        model_data = f.read()
+    
+    response = HttpResponse(
+        model_data,
+        content_type='model/gltf-binary',
+    )
     response['Content-Disposition'] = 'attachment; filename={}_{}.glb'.format(model_id, revision)
-    response['Content-Type'] = 'model/gltf-binary'
     response['Cache-Control'] = 'public, max-age=86400'
     return response
 
