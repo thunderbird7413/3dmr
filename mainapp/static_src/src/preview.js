@@ -2,113 +2,85 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-let axesHelper = null;
-let gridHelper = null;
-let northArrowHelper = null;
-let frontArrowHelper = null;
-let htmlLabels = {};
-let distanceMarkers = {};
-let labelsContainer = null;
-let scaleContainer = null;
-let gridSize = 100;
-let groundPosition = 0;
+class ModelPreview {
+	constructor(elementId, options = {}) {
+		this.axesHelper = null;
+		this.gridHelper = null;
+		this.northArrowHelper = null;
+		this.frontArrowHelper = null;
+		this.htmlLabels = {};
+		this.distanceMarkers = {};
+		this.labelsContainer = null;
+		this.scaleContainer = null;
+		this.gridSize = 100;
+		this.groundPosition = 0;
+		this.mixer = null;
 
-function setUpRenderPane(){
-	const elems = document.querySelectorAll('div.render-pane');
+		this.renderPane = document.getElementById(elementId);
+		this.options = options;
 
-	for(const elem of elems) {
-		const model_id = elem.dataset.model;
-		const revision = elem.dataset.revision;
-		const url = "/api/model/" + model_id + "/" + revision;
+		if (typeof this.options['width'] === 'undefined')
+			this.options['width'] = this.renderPane.clientWidth;
 
-		displayPreview(elem.id, url, {}, model_id, revision,);
+		if (typeof this.options['height'] === 'undefined')
+			this.options['height'] = this.renderPane.clientHeight;
+
+		this.initThreeScene();
 	}
-}
 
-function displayPreview(elementId, url, options={}) {
+	initThreeScene() {
+		this.renderer = new THREE.WebGLRenderer({ antialias: true });
+		this.renderer.setPixelRatio(window.devicePixelRatio);
+		this.renderer.setSize(this.options['width'], this.options['height']);
+		this.renderer.outputEncoding = THREE.sRGBEncoding;
+		this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+		this.renderer.toneMappingExposure = 1.0;
+		this.renderer.physicallyCorrectLights = true;
+		this.renderer.shadowMap.enabled = true;
+		this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-	const three = initTHREE(elementId, options);
-	loadGLB(url, options, three);
-}
+		this.renderPane.appendChild(this.renderer.domElement);
 
-function initTHREE(elementId, options) {
-	const renderPane = document.getElementById(elementId);
+		this.scene = new THREE.Scene();
+		this.scene.background = new THREE.Color(0x87cefa);
 
-	if(typeof options['width'] === 'undefined')
-		options['width'] = renderPane.clientWidth;
+		this.camera = new THREE.PerspectiveCamera(75, this.options['width'] / this.options['height'], 0.1, 1000);
+		this.resizeCanvas();
 
-	if(typeof options['height'] === 'undefined')
-		options['height'] = renderPane.clientHeight;
+		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
 
-	const renderer = new THREE.WebGLRenderer({ antialias: true });
-	renderer.setPixelRatio(window.devicePixelRatio);
-	renderer.setSize(options['width'], options['height']);
-	renderer.outputEncoding = THREE.sRGBEncoding;
-	renderer.toneMapping = THREE.ACESFilmicToneMapping;
-	renderer.toneMappingExposure = 1.0;
-	renderer.physicallyCorrectLights = true;
-	renderer.shadowMap.enabled = true;
-	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+		const ambLight = new THREE.AmbientLight(0xffffff, 0.4);
+		this.scene.add(ambLight);
 
-	renderPane.appendChild(renderer.domElement);
+		const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+		dirLight.position.set(5, 10, 7.5);
+		dirLight.castShadow = true;
+		dirLight.shadow.mapSize.width = 2048;
+		dirLight.shadow.mapSize.height = 2048;
+		dirLight.shadow.bias = -0.0001;
+		this.scene.add(dirLight);
 
-	const scene = new THREE.Scene();
-	scene.background = new THREE.Color(0x87cefa);
+		const hemiLight = new THREE.HemisphereLight(0xffffff, 0x000000, 0.6);
+		this.scene.add(hemiLight);
 
-	const camera = new THREE.PerspectiveCamera(75, options['width'] / options['height'], 0.1, 1000);
-	resizeCanvas(renderer, camera, options);
+		const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+		pointLight.position.set(10, 10, 10);
+		pointLight.castShadow = true;
+		pointLight.shadow.mapSize.width = 2048;
+		pointLight.shadow.mapSize.height = 2048;
+		pointLight.shadow.camera.near = 0.5;
+		pointLight.shadow.camera.far = 500;
+		pointLight.shadow.camera.fov = 50;
+		this.scene.add(pointLight);
 
-	const controls = new OrbitControls(camera, renderer.domElement);
-
-	const ambLight = new THREE.AmbientLight(0xffffff, 0.4);
-	scene.add(ambLight);
-
-	const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-	dirLight.position.set(5, 10, 7.5);
-	dirLight.castShadow = true;
-	dirLight.shadow.mapSize.width = 2048;
-	dirLight.shadow.mapSize.height = 2048;
-	dirLight.shadow.bias = -0.0001;
-	scene.add(dirLight);
-
-	const hemiLight = new THREE.HemisphereLight(0xffffff, 0x000000, 0.6);
-	scene.add(hemiLight);
-
-	const pointLight = new THREE.PointLight(0xffffff, 1, 100);
-	pointLight.position.set(10, 10, 10);
-	pointLight.castShadow = true;
-	pointLight.shadow.mapSize.width = 2048;
-	pointLight.shadow.mapSize.height = 2048;
-	pointLight.shadow.camera.near = 0.5;
-	pointLight.shadow.camera.far = 500;
-	pointLight.shadow.camera.fov = 50;
-	scene.add(pointLight);
-
-	renderer.render(scene, camera);
-
-	return {
-		'scene': scene,
-		'camera': camera,
-		'renderer': renderer,
-		'controls': controls,
-		'renderPane': renderPane,
+		this.renderer.render(this.scene, this.camera);
 	}
-}
 
-function loadGLB(url, options, three) {
-	const loader = new GLTFLoader();
-
-	loader.load(url, function(gltf) {
-		const scene = three.scene;
-		const camera = three.camera;
-		const renderer = three.renderer;
-		const controls = three.controls;
-		const renderPane = three.renderPane;
-
+	displayModel(gltf) {
 		const object = gltf.scene;
-		scene.add(object);
+		this.scene.add(object);
 
-		object.traverse(function(child) {
+		object.traverse((child) => {
 			if (child.isMesh) {
 				child.castShadow = true;
 				child.receiveShadow = true;
@@ -118,298 +90,311 @@ function loadGLB(url, options, three) {
 		const bbox = new THREE.Box3().setFromObject(object);
 		const center = bbox.getCenter(new THREE.Vector3());
 		const size = bbox.getSize(new THREE.Vector3());
-		groundPosition = -size.y/2 - bbox.min.y;
+		this.groundPosition = -size.y / 2 - bbox.min.y;
 
 		object.position.sub(center);
 
 		const maxDim = Math.max(size.x, size.y, size.z);
-		const fov = camera.fov * (Math.PI / 180);
+		const fov = this.camera.fov * (Math.PI / 180);
 		const cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-		camera.position.set(center.x, center.y, cameraZ * 1.5);
-		camera.lookAt(new THREE.Vector3(0, 0, 0));
+		this.camera.position.set(center.x, center.y, cameraZ * 1.5);
+		this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
 		if (maxDim >= 5)
-			gridSize = Math.ceil(maxDim / 50) * 50;
+			this.gridSize = Math.ceil(maxDim / 50) * 50;
 		else
-			gridSize = maxDim;
+			this.gridSize = maxDim;
 
-		let mixer = null;
-	
 		if (gltf.animations && gltf.animations.length > 0) {
-			mixer = new THREE.AnimationMixer(object);
+			this.mixer = new THREE.AnimationMixer(object);
 			gltf.animations.forEach((clip) => {
-				mixer.clipAction(clip).play();
+				this.mixer.clipAction(clip).play();
 			});
 		}
 
-		setupFullscreenButton(three);
-
-		animate(renderer, scene, camera, controls, options, mixer, renderPane);
-	}, undefined, function(error) {
-		console.error("Error loading GLB:", error);
-	});
-}
-
-function animate(renderer, scene, camera, controls, options, mixer, renderPane) {
-	// clock instance needs to be outside the animation
-	// loop to ensure consistency with the mixer 
-	const clock = new THREE.Clock();
-
-	function loop() {
-		requestAnimationFrame(loop);
-
-		const delta = clock.getDelta();
-
-		if (mixer) mixer.update(delta);
-
-		resizeCanvas(renderer, camera, options, renderPane);
-
-		controls.update();
-
-		if (document.fullscreenElement) {
-			updateLabels(camera);
-		}
-
-		renderer.render(scene, camera);
+		this.setupFullscreenButton();
+		this.animate();
 	}
 
-	loop();
-}
+	loadAndDisplay(url, onLoaded) {
+		const loader = new GLTFLoader();
 
-
-function resizeCanvas(renderer, camera, options, renderPane) {
-	const canvas = renderer.domElement;
-
-	canvas.style = null;
-	let width, height;
-	if (document.fullscreenElement === renderPane) {
-		width = window.innerWidth; 
-		height = window.innerHeight;
-	} else {
-		width = options['width'];
-		height = options['height'];
+		loader.load(url, (gltf) => {
+			this.displayModel(gltf);
+			if (onLoaded) onLoaded(gltf);
+		}, undefined, (error) => {
+			console.error("Error loading GLB:", error);
+		});
 	}
 
-	if(canvas.width != width || canvas.height != height) {
-		renderer.setSize(width, height, false);
-		camera.aspect = width/height;
-		camera.updateProjectionMatrix();
+	animate() {
+		const clock = new THREE.Clock();
+
+		const loop = () => {
+			requestAnimationFrame(loop);
+
+			const delta = clock.getDelta();
+
+			if (this.mixer) this.mixer.update(delta);
+
+			this.resizeCanvas();
+
+			this.controls.update();
+
+			if (document.fullscreenElement) {
+				this.updateLabels();
+			}
+
+			this.renderer.render(this.scene, this.camera);
+		};
+
+		loop();
 	}
-}
 
-function toggleVisualHelpers(scene, enable) {
-	if (enable) {
-		if (!axesHelper) {
-			axesHelper = new THREE.AxesHelper(gridSize/2);
-			axesHelper.position.y = groundPosition;
-			scene.add(axesHelper);
+	resizeCanvas() {
+		const canvas = this.renderer.domElement;
+
+		canvas.style = null;
+		let width, height;
+		if (document.fullscreenElement === this.renderPane) {
+			width = window.innerWidth;
+			height = window.innerHeight;
+		} else {
+			width = this.options['width'];
+			height = this.options['height'];
 		}
 
-		if (!gridHelper) {
-			gridHelper = new THREE.GridHelper(gridSize);
-			gridHelper.position.y = groundPosition;
-			scene.add(gridHelper);
+		if (canvas.width != width || canvas.height != height) {
+			this.renderer.setSize(width, height, false);
+			this.camera.aspect = width / height;
+			this.camera.updateProjectionMatrix();
+		}
+	}
+
+	toggleVisualHelpers(enable) {
+		if (enable) {
+			if (!this.axesHelper) {
+				this.axesHelper = new THREE.AxesHelper(this.gridSize / 2);
+				this.axesHelper.position.y = this.groundPosition;
+				this.scene.add(this.axesHelper);
+			}
+
+			if (!this.gridHelper) {
+				this.gridHelper = new THREE.GridHelper(this.gridSize);
+				this.gridHelper.position.y = this.groundPosition;
+				this.scene.add(this.gridHelper);
+			}
+
+			const z_dir = new THREE.Vector3(0, 0, 1);
+			const neg_z_dir = new THREE.Vector3(0, 0, -1);
+			const origin = new THREE.Vector3(0, this.groundPosition, 0);
+			const length = this.gridSize * 1.1 / 2;
+			const gridSpacing = this.gridSize / 10;
+
+			if (!this.northArrowHelper) {
+				this.northArrowHelper = new THREE.ArrowHelper(neg_z_dir, origin, length, 0xFFD700, gridSpacing * 0.3, 0.1 * gridSpacing);
+				this.scene.add(this.northArrowHelper);
+			}
+			if (!this.frontArrowHelper) {
+				this.frontArrowHelper = new THREE.ArrowHelper(z_dir, origin, length, 0x0000FF, gridSpacing * 0.3, 0.1 * gridSpacing);
+				this.scene.add(this.frontArrowHelper);
+			}
+
+			this.labelsContainer = document.getElementById('labels-container');
+			if (this.labelsContainer) {
+				this.labelsContainer.style.display = 'block';
+				if (Object.keys(this.htmlLabels).length === 0) {
+					this.labelsContainer = document.getElementById('labels-container');
+					if (!this.labelsContainer) return;
+
+					this.labelsContainer.innerHTML = '';
+					this.htmlLabels = {};
+
+					this.htmlLabels.x = this.createLabelElement('X', 'red');
+					this.htmlLabels.y = this.createLabelElement('Y', 'green');
+					this.htmlLabels.z = this.createLabelElement('Z', 'blue');
+					this.htmlLabels.front = this.createLabelElement('Front', 'blue');
+					this.htmlLabels.north = this.createLabelElement('North', 'yellow');
+					this.labelsContainer.appendChild(this.htmlLabels.x);
+					this.labelsContainer.appendChild(this.htmlLabels.y);
+					this.labelsContainer.appendChild(this.htmlLabels.z);
+					this.labelsContainer.appendChild(this.htmlLabels.front);
+					this.labelsContainer.appendChild(this.htmlLabels.north);
+
+					this.distanceMarkers = {};
+
+					for (let i = -5; i <= 5; i++) {
+						const distance = i * gridSpacing;
+						this.distanceMarkers[`marker_x_${i}`] = this.createLabelElement(`${distance.toFixed(1)}`, 'skyblue');
+						this.labelsContainer.appendChild(this.distanceMarkers[`marker_x_${i}`]);
+						this.distanceMarkers[`marker_z_${i}`] = this.createLabelElement(`${distance.toFixed(1)}`, 'skyblue');
+						this.labelsContainer.appendChild(this.distanceMarkers[`marker_z_${i}`]);
+					}
+				}
+			}
+
+			this.scaleContainer = document.getElementById('scale-container');
+			if (this.scaleContainer) {
+				this.scaleContainer.style.display = 'block';
+				if (!this.gridSize) return;
+
+				const gridSpacingEl = document.getElementById('grid-spacing-value');
+				if (gridSpacingEl) gridSpacingEl.textContent = `${gridSpacing.toFixed(1)}m`;
+			}
+		} else {
+			if (this.axesHelper) {
+				this.scene.remove(this.axesHelper);
+				this.axesHelper.dispose();
+				this.axesHelper = null;
+			}
+
+			if (this.gridHelper) {
+				this.scene.remove(this.gridHelper);
+				this.gridHelper.dispose();
+				this.gridHelper = null;
+			}
+
+			if (this.northArrowHelper) {
+				this.scene.remove(this.northArrowHelper);
+				this.northArrowHelper.dispose();
+				this.northArrowHelper = null;
+			}
+			if (this.frontArrowHelper) {
+				this.scene.remove(this.frontArrowHelper);
+				this.frontArrowHelper.dispose();
+				this.frontArrowHelper = null;
+			}
+
+			if (this.labelsContainer) {
+				this.labelsContainer.style.display = 'none';
+			}
+
+			if (this.scaleContainer) {
+				this.scaleContainer.style.display = 'none';
+			}
+		}
+	}
+
+	createLabelElement(text, color) {
+		const div = document.createElement('div');
+		div.className = 'axis-label';
+		div.style.color = color;
+		div.textContent = text;
+		return div;
+	}
+
+	updateLabels() {
+		if (!this.labelsContainer || this.labelsContainer.style.display === 'none' || !this.camera) return;
+
+		const tempV = new THREE.Vector3();
+		const label3DPositions = {
+			x: new THREE.Vector3(this.gridSize / 2, this.groundPosition, 0),
+			y: new THREE.Vector3(0, this.gridSize / 2 + this.groundPosition, 0),
+			z: new THREE.Vector3(0, this.groundPosition, this.gridSize / 2),
+			north: new THREE.Vector3(0, this.groundPosition, -this.gridSize * 1.11 / 2),
+			front: new THREE.Vector3(0, this.groundPosition, this.gridSize * 1.11 / 2),
+		};
+
+		for (const labelItem in { x: true, y: true, z: true, north: true, front: true }) {
+			const label = this.htmlLabels[labelItem];
+			const position = label3DPositions[labelItem];
+
+			tempV.copy(position);
+			tempV.project(this.camera);
+
+			const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
+			const y = (-tempV.y * 0.5 + 0.5) * window.innerHeight;
+
+			label.style.left = `${x}px`;
+			label.style.top = `${y}px`;
 		}
 
-		const z_dir = new THREE.Vector3(0, 0, 1);
-		const neg_z_dir = new THREE.Vector3(0, 0, -1);
-		const origin = new THREE.Vector3(0, groundPosition, 0);
-		// slightly offset to avoid overlap with the grid
-		const length = gridSize * 1.1 / 2;
-		const gridSpacing = gridSize / 10;
+		if (Object.keys(this.distanceMarkers).length > 0) {
+			const gridSpacing = this.gridSize / 10;
 
-		if (!northArrowHelper) {
-			northArrowHelper = new THREE.ArrowHelper(neg_z_dir, origin, length, 0xFFD700, gridSpacing * 0.3, 0.1 * gridSpacing);
-			scene.add(northArrowHelper);
-		}
-		if (!frontArrowHelper) {
-			frontArrowHelper = new THREE.ArrowHelper(z_dir, origin, length, 0x0000FF, gridSpacing * 0.3, 0.1 * gridSpacing);
-			scene.add(frontArrowHelper);
-		}
+			for (let i = -5; i <= 5; i++) {
+				const marker_x = this.distanceMarkers[`marker_x_${i}`];
+				const marker_z = this.distanceMarkers[`marker_z_${i}`];
+				if (marker_x) {
+					const markerPositionX = new THREE.Vector3(
+						-this.gridSize / 2,
+						this.groundPosition,
+						(i * gridSpacing),
+					);
 
-		labelsContainer = document.getElementById('labels-container');
-		if (labelsContainer) {
-			labelsContainer.style.display = 'block';
-			if (Object.keys(htmlLabels).length === 0) {
-				labelsContainer = document.getElementById('labels-container');
-				if (!labelsContainer) return;
+					tempV.copy(markerPositionX);
+					tempV.project(this.camera);
+					const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
+					const y = (-tempV.y * 0.5 + 0.5) * window.innerHeight;
+					marker_x.style.left = `${x}px`;
+					marker_x.style.top = `${y}px`;
+				}
+				if (marker_z) {
+					const markerPositionZ = new THREE.Vector3(
+						(i * gridSpacing),
+						this.groundPosition,
+						-this.gridSize / 2
+					);
 
-				labelsContainer.innerHTML = '';
-				htmlLabels = {};
-
-				htmlLabels.x = createLabelElement('X', 'red');
-				htmlLabels.y = createLabelElement('Y', 'green');
-				htmlLabels.z = createLabelElement('Z', 'blue');
-				htmlLabels.front = createLabelElement('Front', 'blue');
-				htmlLabels.north = createLabelElement('North', 'yellow');
-				labelsContainer.appendChild(htmlLabels.x);
-				labelsContainer.appendChild(htmlLabels.y);
-				labelsContainer.appendChild(htmlLabels.z);
-				labelsContainer.appendChild(htmlLabels.front);
-				labelsContainer.appendChild(htmlLabels.north);
-
-				distanceMarkers = {};
-				
-				for (let i = -5; i <= 5; i++) {
-					const distance = i * gridSpacing;
-					distanceMarkers[`marker_x_${i}`] = createLabelElement(`${distance.toFixed(1)}`, 'skyblue');
-					labelsContainer.appendChild(distanceMarkers[`marker_x_${i}`]);
-					distanceMarkers[`marker_z_${i}`] = createLabelElement(`${distance.toFixed(1)}`, 'skyblue');
-					labelsContainer.appendChild(distanceMarkers[`marker_z_${i}`]);
+					tempV.copy(markerPositionZ);
+					tempV.project(this.camera);
+					const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
+					const y = (-tempV.y * 0.5 + 0.5) * window.innerHeight;
+					marker_z.style.left = `${x}px`;
+					marker_z.style.top = `${y}px`;
 				}
 			}
 		}
-
-		scaleContainer = document.getElementById('scale-container');
-		if (scaleContainer) {
-			scaleContainer.style.display = 'block';
-			if (!gridSize) return;
-
-			const gridSpacingEl = document.getElementById('grid-spacing-value');
-			if (gridSpacingEl) gridSpacingEl.textContent = `${gridSpacing.toFixed(1)}m`;
-		}
-	} else {
-		if (axesHelper) {
-			scene.remove(axesHelper);
-			axesHelper.dispose();
-			axesHelper = null;
-		}
-
-		if (gridHelper) {
-			scene.remove(gridHelper);
-			gridHelper.dispose();
-			gridHelper = null;
-		}
-
-		if (northArrowHelper) {
-			scene.remove(northArrowHelper);
-			northArrowHelper.dispose();
-			northArrowHelper = null;
-		}
-		if (frontArrowHelper) {
-			scene.remove(frontArrowHelper);
-			frontArrowHelper.dispose();
-			frontArrowHelper = null;
-		}
-
-		if (labelsContainer) {
-			labelsContainer.style.display = 'none';
-		}
-
-		if (scaleContainer) {
-			scaleContainer.style.display = 'none';
-		}
-	}
-}
-
-function createLabelElement(text, color) {
-	const div = document.createElement('div');
-	div.className = 'axis-label';
-	div.style.color = color;
-	div.textContent = text;
-	return div;
-}
-
-function updateLabels(camera) {
-	if (!labelsContainer || labelsContainer.style.display === 'none' || !camera) return;
-
-	const tempV = new THREE.Vector3();
-	const label3DPositions = {
-		x: new THREE.Vector3(gridSize/2, groundPosition, 0),
-		y: new THREE.Vector3(0, gridSize/2 + groundPosition, 0),
-		z: new THREE.Vector3(0, groundPosition, gridSize/2),
-		// slightly offset to avoid overlap with the arrow head
-		north: new THREE.Vector3(0, groundPosition, -gridSize * 1.11 / 2),
-		front: new THREE.Vector3(0, groundPosition, gridSize * 1.11 / 2),
-	};
-
-	for (const labelItem in {x:true, y:true, z:true, north:true, front:true}) {
-		const label = htmlLabels[labelItem];
-		const position = label3DPositions[labelItem];
-
-		tempV.copy(position);
-		tempV.project(camera);
-
-		const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
-		const y = (-tempV.y * 0.5 + 0.5) * window.innerHeight;
-
-		label.style.left = `${x}px`;
-		label.style.top = `${y}px`;
 	}
 
-	if (Object.keys(distanceMarkers).length > 0) {
-		const gridSpacing = gridSize / 10;
-		
-		for (let i = -5; i <= 5; i++) {
-			const marker_x = distanceMarkers[`marker_x_${i}`];
-			const marker_z = distanceMarkers[`marker_z_${i}`];
-			if (marker_x) {
-				
-				const markerPositionX = new THREE.Vector3(
-					-gridSize/2,
-					groundPosition, 
-					(i * gridSpacing), 
-				);
-				
-				tempV.copy(markerPositionX);
-				tempV.project(camera);
-				const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
-				const y = (-tempV.y * 0.5 + 0.5) * window.innerHeight;
-				marker_x.style.left = `${x}px`;
-				marker_x.style.top = `${y}px`;
+	handleFullscreenChange() {
+		const isFullscreen = document.fullscreenElement === this.renderPane;
+
+		if (isFullscreen) {
+			this.toggleVisualHelpers(true);
+		} else {
+			this.toggleVisualHelpers(false);
+		}
+
+		this.resizeCanvas();
+	}
+
+	setupFullscreenButton() {
+		const fullscreenButton = document.getElementById('fullscreen-button');
+		if (!fullscreenButton) return;
+
+		fullscreenButton.addEventListener('click', () => {
+			if (!document.fullscreenElement && this.renderPane.requestFullscreen) {
+				this.renderPane.requestFullscreen();
+			} else if (document.exitFullscreen) {
+				document.exitFullscreen();
 			}
-			if (marker_z) {
-				const markerPositionZ = new THREE.Vector3(
-					(i * gridSpacing), 
-					groundPosition, 
-					-gridSize/2
-				);
+		});
 
-				tempV.copy(markerPositionZ);
-				tempV.project(camera);
-				const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
-				const y = (-tempV.y * 0.5 + 0.5) * window.innerHeight;
-				marker_z.style.left = `${x}px`;
-				marker_z.style.top = `${y}px`;
-
-			}
-		}
+		document.addEventListener('fullscreenchange', () => {
+			this.handleFullscreenChange();
+		});
 	}
 }
 
-function handleFullscreenChange(threeInstance) {
-	const renderPane = document.querySelector('.render-pane');
-	const isFullscreen = document.fullscreenElement === renderPane;
+function setUpRenderPane(onLoaded) {
+	const elems = document.querySelectorAll('div.render-pane');
 
-	if (isFullscreen) {
-		console.log('Entered fullscreen for render-pane');
-		toggleVisualHelpers(threeInstance.scene, true);
-	} else {
-		console.log('Exited fullscreen for render-pane');
-		toggleVisualHelpers(threeInstance.scene, false);
+	for (const elem of elems) {
+		const model_id = elem.dataset.model;
+		const revision = elem.dataset.revision;
+		const url = "/api/model/" + model_id + "/" + revision;
+
+		const preview = new ModelPreview(elem.id);
+		preview.loadAndDisplay(url, onLoaded);
 	}
-	
-	resizeCanvas(threeInstance.renderer, threeInstance.camera, {}, renderPane);
 }
 
-function setupFullscreenButton(threeInstance) {
-	const fullscreenButton = document.getElementById('fullscreen-button');
-	if (!fullscreenButton) return;
-
-	fullscreenButton.addEventListener('click', function (event) {
-		const renderPane = document.querySelector('.render-pane');
-
-		if (!document.fullscreenElement && renderPane.requestFullscreen) {
-			renderPane.requestFullscreen();
-		} else if (document.exitFullscreen) {
-			document.exitFullscreen();
-		}
-	});
-
-	document.addEventListener('fullscreenchange', function (event) {
-		handleFullscreenChange(threeInstance);
-	});
+function displayPreview(elementId, url, options = {}, onLoaded) {
+	const preview = new ModelPreview(elementId, options);
+	preview.loadAndDisplay(url, onLoaded);
 }
 
+window.ModelPreview = ModelPreview;
 window.setUpRenderPane = setUpRenderPane;
 window.displayPreview = displayPreview;
