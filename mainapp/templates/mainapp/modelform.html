@@ -3,9 +3,7 @@
 {% if form_file %}
 {% endif %}
 
-<form
-	action="{% if revise %}{% url 'revise' model.model_id %}{% elif edit %}{% url 'edit' model.model_id model.revision %}{% else %}{% url 'upload' %}{% endif %}"
-	method="post" enctype="multipart/form-data" {% if form_metadata %} onsubmit="return checkNumbers();" {% endif %}>
+<form action="{% if revise %}{% url 'revise' model.model_id %}{% elif edit %}{% url 'edit' model.model_id model.revision %}{% else %}{% url 'upload' %}{% endif %}" method="post" enctype="multipart/form-data" {% if form_metadata %} onsubmit="return checkNumbers();" {% endif %}>
 	{% csrf_token %}
 	{% if form_metadata %}
 	<div class="form-group required">
@@ -18,15 +16,15 @@
 	<div class="form-group required">
 		<label for="{{ form.model_file.id_for_label }}">{{ form.model_file.label }}</label>
 		{% for error in form.model_file.errors.as_data %}
-		<div class="alert alert-danger" role="alert">
-			{{ error.message }}
-			{% if error.code == 'glb_validation_failed' and form.model_file.field.glb_errors %}
-			<button type="button" class="btn btn-danger btn-sm" onclick="showGlbErrors()">
-				View Details
-			</button>
-			{% endif %}
-		</div>
-		{% endfor %}
+			<div class="alert alert-danger" role="alert">
+				{{ error.message }}
+				{% if error.code == 'glb_validation_failed' and form.model_file.field.glb_errors %}
+				<button type="button" class="btn btn-danger btn-sm" onclick="showGlbErrors()">
+					View Details
+				</button>
+				{% endif %}
+			</div>
+			{% endfor %}
 		{{ form.model_file }}
 	</div>
 	<div id="model-preview" style="margin-bottom: 15px; display: none;">
@@ -51,8 +49,7 @@
 		</div>
 	</div>
 	<div id="model-status"></div>
-	<span class="help-block">Please use the full screen preview above to ensure that your model's alignment is in line
-		with the world directions.</span>
+	<span class="help-block">Please use the full screen preview above to ensure that your model's alignment is in line with the world directions.</span>
 	{% endif %}
 	{% if form_metadata %}
 	<div class="form-group">
@@ -73,7 +70,6 @@
 	<label for="map">Approximate position:</label>
 	<div id="map"></div>
 	<p id="map-descriptor"></p>
-
 	<div class="row flex" style="justify-content: space-between;">
 		<div class="form-group" style="width: 45%;">
 			<label for="{{ form.latitude.id_for_label }}">{{ form.latitude.label }}:</label>
@@ -127,14 +123,14 @@
 	}
 
 	function createMarker(lat, lon) {
-		marker = new L.marker([lat, lon], { draggable: true }).addTo(map);
-		marker.on('drag', function (e) {
+		marker = new L.marker([lat, lon], {draggable: true}).addTo(map);
+		marker.on('drag', function(e) {
 			updateLatLon(e.latlng.lat, e.latlng.lng);
 		});
 	}
 
 	var map = L.map('map');
-	map.on('load', function () {
+	map.on('load', function() {
 		var descriptor = document.getElementById('map-descriptor');
 		descriptor.innerHTML = 'Click anywhere on the map to set approximate longitude/latitude values.<br/>This will only be attached to the model\'s metadata.';
 	});
@@ -151,13 +147,13 @@
 	var latitude = parseFloat(document.getElementById('id_latitude').value);
 	var longitude = parseFloat(document.getElementById('id_longitude').value);
 
-	if (latitude && longitude) {
+	if(latitude && longitude) {
 		updateLatLon(latitude, longitude);
 		createMarker(latitude, longitude);
 	}
 
-	map.on('click', function (e) {
-		if (marker)
+	map.on('click', function(e) {
+		if(marker)
 			marker.remove(map);
 
 		updateLatLon(e.latlng.lat, e.latlng.lng);
@@ -173,35 +169,35 @@
 	function checkNumbers() {
 		var data = {
 			latitude: ['{{ form.latitude.id_for_label }}', -90, 90],
-			longitude: ['{{ form.longitude.id_for_label }}', -180, 180],
+			longitude: ['{{ form.longitude.id_for_label }}',-180, 180],
 		}
 
 		ok = true;
 
-		for (k in data) {
+		for(k in data) {
 			var arr = data[k];
 			var element = document.getElementById(arr[0]);
 			var valueString = element.value;
 
-			if (valueString == '')
+			if(valueString == '')
 				continue;
 
 			var value = parseFloat(valueString.replace(',', '.'));
 			console.log(value);
-			if (isNaN(value)) {
+			if(isNaN(value)) {
 				displayError(k, "Must be a number.");
 				ok = false;
 				continue;
 			}
 		}
 
-		if (!ok)
+		if(!ok)
 			displayError('form', 'Recheck the form for errors.');
 
 		return ok;
 	}
 
-	document.addEventListener('DOMContentLoaded', function () {
+	document.addEventListener('DOMContentLoaded', function() {
 		const licenseHelp = document.getElementById('license-help');
 		const radioButtons = document.querySelectorAll('input[name="model_source"]');
 		const modelSource = document.getElementById('model-source');
@@ -214,7 +210,7 @@
 		}
 
 		radioButtons.forEach(radio => {
-			radio.addEventListener('change', function () {
+			radio.addEventListener('change', function() {
 				toogle(this.value);
 			});
 		});
@@ -231,31 +227,31 @@
 {% vite_asset 'src/main.js' %}
 <script type="module">
 	document.getElementById('{{ form.model_file.id_for_label }}')
-		.addEventListener("change", function (event) {
-			const file = event.target.files[0];
-			if (file) {
-				const fileURL = URL.createObjectURL(file);
+	.addEventListener("change", function (event) {
+		const file = event.target.files[0];
+		if (file) {
+			const fileURL = URL.createObjectURL(file);
 
 
-				const options = { "width": "400", "height": "350" }
+			const options = { "width": "400", "height": "350" }
 
-				const renderPane = document.getElementById("render-pane");
-				const canvases = document.getElementsByTagName("canvas");
+			const renderPane = document.getElementById("render-pane");
+			const canvases = document.getElementsByTagName("canvas");
 
-				for (const element of canvases) {
-					if (renderPane.contains(element)) {
-						renderPane.removeChild(element);
-					}
+			for (const element of canvases) {
+				if (renderPane.contains(element)) {
+					renderPane.removeChild(element);
 				}
-
-				displayPreview("render-pane", fileURL, options, function (gltf) {
-					const stats = new ModelStats();
-					stats.processModel(gltf);
-				});
-			} else {
-				document.getElementById("model-preview").style.display = "none";
 			}
-		});
+
+			displayPreview("render-pane", fileURL, options, function (gltf) {
+				const stats = new ModelStats();
+				stats.processModel(gltf);
+			});
+		} else {
+			document.getElementById("model-preview").style.display = "none";
+		}
+	});
 </script>
 {% endif %}
 
@@ -264,50 +260,50 @@
 {% endif %}
 
 <script>
-	function showGlbErrors() {
-		const errorsDataElement = document.getElementById('glb-errors-data');
-		if (!errorsDataElement) return;
+function showGlbErrors() {
+	const errorsDataElement = document.getElementById('glb-errors-data');
+	if (!errorsDataElement) return;
 
-		const errors = JSON.parse(errorsDataElement.textContent);
+	const errors = JSON.parse(errorsDataElement.textContent);
 
-		const popup = window.open('', 'GLB Validation Errors', 'popup');
+	const popup = window.open('', 'GLB Validation Errors', 'popup');
 
-		let tableContent = '';
-		errors.forEach((error, index) => {
-			tableContent += `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${error.message}</td>
-                <td><code>${error.pointer}</code></td>
-            </tr>
-        `;
-		});
+	let tableContent = '';
+	errors.forEach((error, index) => {
+		tableContent += `
+		<tr>
+			<td>${index + 1}</td>
+			<td>${error.message}</td>
+			<td><code>${error.pointer}</code></td>
+		</tr>
+	`;
+	});
 
-		popup.document.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>GLB Validation Errors</title>
-			<link rel="stylesheet" href="{% static 'mainapp/lib/bootstrap.min.css' %}">
-        </head>
-        <body>
-            <h2>GLB Validation Errors</h2>
-            <p>The following errors were found in the uploaded GLB file:</p>
-            <table class="table table-striped table-bordered">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Error Message</th>
-                        <th>Node Pointer</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${tableContent}
-                </tbody>
-            </table>
-        </body>
-        </html>
-    `);
-		popup.document.close();
-	}
+	popup.document.write(`
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<title>GLB Validation Errors</title>
+		<link rel="stylesheet" href="{% static 'mainapp/lib/bootstrap.min.css' %}">
+	</head>
+	<body>
+		<h2>GLB Validation Errors</h2>
+		<p>The following errors were found in the uploaded GLB file:</p>
+		<table class="table table-striped table-bordered">
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>Error Message</th>
+					<th>Node Pointer</th>
+				</tr>
+			</thead>
+			<tbody>
+				${tableContent}
+			</tbody>
+		</table>
+	</body>
+	</html>
+`);
+	popup.document.close();
+}
 </script>
