@@ -396,5 +396,3 @@ function displayPreview(elementId, url, options = {}, onLoaded) {
 }
 
 window.ModelPreview = ModelPreview;
-window.setUpRenderPane = setUpRenderPane;
-window.displayPreview = displayPreview;
