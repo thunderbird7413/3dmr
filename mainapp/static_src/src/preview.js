@@ -377,7 +377,7 @@ class ModelPreview {
 	}
 }
 
-function setUpRenderPane(onLoaded) {
+function setUpRenderPane({ onLoaded } = {}) {
 	const elems = document.querySelectorAll('div.render-pane');
 
 	for (const elem of elems) {
