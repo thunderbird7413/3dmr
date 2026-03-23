@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-class ModelPreview {
+export class ModelPreview {
 	constructor(elementId, options = {}) {
 		this.axesHelper = null;
 		this.gridHelper = null;
@@ -377,7 +377,7 @@ class ModelPreview {
 	}
 }
 
-function setUpRenderPane({ onLoaded } = {}) {
+export function setUpRenderPane({ onLoaded } = {}) {
 	const elems = document.querySelectorAll('div.render-pane');
 
 	for (const elem of elems) {
@@ -390,9 +390,8 @@ function setUpRenderPane({ onLoaded } = {}) {
 	}
 }
 
-function displayPreview(elementId, url, options = {}, onLoaded) {
+export function displayPreview(elementId, url, options = {}, onLoaded) {
 	const preview = new ModelPreview(elementId, options);
 	preview.loadAndDisplay(url, onLoaded);
 }
 
-window.ModelPreview = ModelPreview;
