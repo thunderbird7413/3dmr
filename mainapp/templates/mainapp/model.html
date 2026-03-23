@@ -46,7 +46,7 @@
 							<div id="fullscreen-button">&#x26F6;</div>
 							<div id="labels-container"></div>
 							<div id="scale-container" style="display: none;">
-								<span>Grid Spacing:</span>
+								<span>Grid Spacing:</span> 
 								<span id="grid-spacing-value">-</span>
 							</div>
 						</div>
@@ -61,66 +61,65 @@
 			</div>
 		</div>
 		<div>
-			<div class="col-md-4">
-				{% if model.is_hidden %}
-				<div class="panel panel-danger">
-					{% else %}
-					<div class="panel panel-primary">
+		<div class="col-md-4">
+			{% if model.is_hidden %}
+			<div class="panel panel-danger">
+			{% else %}
+			<div class="panel panel-primary">
+			{% endif %}
+				<div class="panel-heading">
+					<h3 class="panel-title">
+						{{ model.title }} 
+						{% if not latest_page %}
+							<small style="cursor:help;" title="This is {% if model.latest %}the latest version{% else %}an older version{% endif %}">
+							(Revision {{ model.revision }})
+							</small>
 						{% endif %}
-						<div class="panel-heading">
-							<h3 class="panel-title">
-								{{ model.title }}
-								{% if not latest_page %}
-								<small style="cursor:help;"
-									title="This is {% if model.latest %}the latest version{% else %}an older version{% endif %}">
-									(Revision {{ model.revision }})
-								</small>
-								{% endif %}
-
-							</h3>
-						</div>
-						<div class="panel-body" style="padding:0px;">
-							<ul class="nav nav-tabs" role="tablist">
-								<li role="presentation" class="active"><a href="#overview" aria-controls="overview" role="tab" data-toggle="tab">Overview</a></li>
-								<li role="presentation"><a href="#stats" aria-controls="stats" role="tab" data-toggle="tab">Stats</a></li>
-								<li role="presentation"><a href="#history" aria-controls="history" role="tab" data-toggle="tab">History</a></li>
-							</ul>
-							<div class="tab-content">
-								<div role="tabpanel" class="tab-pane active" id="overview">
-									{% include 'mainapp/model_overview.html' %}
-								</div>
-								<div role="tabpanel" class="tab-pane" id="stats">
-									{% include 'mainapp/model_stats.html' %}
-								</div>
-								<div role="tabpanel" class="tab-pane" id="history">
-									{% include 'mainapp/model_history.html' %}
-								</div>
+						
+					</h3>
+				</div>
+					<div class="panel-body" style="padding:0px;">
+						<ul class="nav nav-tabs" role="tablist">
+							<li role="presentation" class="active"><a href="#overview" aria-controls="overview" role="tab" data-toggle="tab">Overview</a></li>
+							<li role="presentation"><a href="#stats" aria-controls="stats" role="tab" data-toggle="tab">Stats</a></li>
+							<li role="presentation"><a href="#history" aria-controls="history" role="tab" data-toggle="tab">History</a></li>
+						</ul>
+						<div class="tab-content">
+							<div role="tabpanel" class="tab-pane active" id="overview">
+								{% include 'mainapp/model_overview.html' %}
+							</div>
+							<div role="tabpanel" class="tab-pane" id="stats">
+								{% include 'mainapp/model_stats.html' %}
+							</div>
+							<div role="tabpanel" class="tab-pane" id="history">
+								{% include 'mainapp/model_history.html' %}
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-		<script>
-			{% if model.location %}
-			initMap("mapdiv", {{ model.location.latitude }}, {{ model.location.longitude }}, 750, 480);
-			{% endif %}
-		</script>
-		{% endblock %}
-		{% block footeradditions %}
-		{% vite_asset 'src/main.js' %}
-		<script>
-			window.addEventListener("load", function () {
-				setUpRenderPane({
-					onLoaded: function (gltf) {
-						const stats = new ModelStats();
-						stats.processModel(gltf);
-					}
-				});
-			});
+	</div>
+</div>
+<script>
+{% if model.location %}
+initMap("mapdiv", {{ model.location.latitude }}, {{ model.location.longitude }}, 750, 480);
+{% endif %}
+</script>
+{% endblock %}
+{% block footeradditions %}
+{% vite_asset 'src/main.js' %}
+<script>
+	window.addEventListener("load", function () {
+		setUpRenderPane({
+			onLoaded: function (gltf) {
+				const stats = new ModelStats();
+				stats.processModel(gltf);
+			}
+		});
+	});
 
-			confirmDeleteModel = function () {
-				return confirm("Are you sure you want to delete this model? This action cannot be undone.");
-			};
-		</script>
-		{% endblock %}
+	confirmDeleteModel = function() {
+		return confirm("Are you sure you want to delete this model? This action cannot be undone.");
+	};
+</script>
+{% endblock %}

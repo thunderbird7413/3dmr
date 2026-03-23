@@ -3,7 +3,7 @@
 {% if form_file %}
 {% endif %}
 
-<form action="{% if revise %}{% url 'revise' model.model_id %}{% elif edit %}{% url 'edit' model.model_id model.revision %}{% else %}{% url 'upload' %}{% endif %}" method="post" enctype="multipart/form-data" {% if form_metadata %} onsubmit="return checkNumbers();" {% endif %}>
+<form action="{% if revise %}{% url 'revise' model.model_id %}{% elif edit %}{% url 'edit' model.model_id model.revision %}{% else %}{% url 'upload' %}{% endif %}" method="post" enctype="multipart/form-data"{% if form_metadata %} onsubmit="return checkNumbers();"{% endif %}>
 	{% csrf_token %}
 	{% if form_metadata %}
 	<div class="form-group required">
@@ -16,15 +16,15 @@
 	<div class="form-group required">
 		<label for="{{ form.model_file.id_for_label }}">{{ form.model_file.label }}</label>
 		{% for error in form.model_file.errors.as_data %}
-			<div class="alert alert-danger" role="alert">
-				{{ error.message }}
-				{% if error.code == 'glb_validation_failed' and form.model_file.field.glb_errors %}
-				<button type="button" class="btn btn-danger btn-sm" onclick="showGlbErrors()">
-					View Details
-				</button>
-				{% endif %}
-			</div>
-			{% endfor %}
+            <div class="alert alert-danger" role="alert">
+                {{ error.message }}
+                {% if error.code == 'glb_validation_failed' and form.model_file.field.glb_errors %}
+                    <button type="button" class="btn btn-danger btn-sm" onclick="showGlbErrors()">
+                        View Details
+                    </button>
+                {% endif %}
+            </div>
+        {% endfor %}
 		{{ form.model_file }}
 	</div>
 	<div id="model-preview" style="margin-bottom: 15px; display: none;">
@@ -35,7 +35,7 @@
 					<div id="fullscreen-button">&#x26F6;</div>
 					<div id="labels-container"></div>
 					<div id="scale-container" style="display: none;">
-						<span>Grid Spacing:</span>
+						<span>Grid Spacing:</span> 
 						<span id="grid-spacing-value">-</span>
 					</div>
 				</div>
@@ -70,6 +70,7 @@
 	<label for="map">Approximate position:</label>
 	<div id="map"></div>
 	<p id="map-descriptor"></p>
+	
 	<div class="row flex" style="justify-content: space-between;">
 		<div class="form-group" style="width: 45%;">
 			<label for="{{ form.latitude.id_for_label }}">{{ form.latitude.label }}:</label>
@@ -98,8 +99,7 @@
 		{% for error in form.source.errors %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endfor %}
 		<div class="alert alert-danger" role="alert" id="source-error" style="display: none;"></div>
 		{{ form.source }}
-		<span id="source-help" class="help-block">If available, please provide a direct link to the source model. If a
-			link isn't available, briefly describe where it came from.</span>
+		<span id="source-help" class="help-block">If available, please provide a direct link to the source model. If a link isn't available, briefly describe where it came from.</span>
 	</div>
 	<div class="form-group">
 		<label>License</label>
@@ -155,7 +155,7 @@
 	map.on('click', function(e) {
 		if(marker)
 			marker.remove(map);
-
+		
 		updateLatLon(e.latlng.lat, e.latlng.lng);
 		createMarker(e.latlng.lat, e.latlng.lng);
 	});
@@ -197,29 +197,29 @@
 		return ok;
 	}
 
-	document.addEventListener('DOMContentLoaded', function() {
-		const licenseHelp = document.getElementById('license-help');
-		const radioButtons = document.querySelectorAll('input[name="model_source"]');
-		const modelSource = document.getElementById('model-source');
+    document.addEventListener('DOMContentLoaded', function() {
+        const licenseHelp = document.getElementById('license-help');
+        const radioButtons = document.querySelectorAll('input[name="model_source"]');
+        const modelSource = document.getElementById('model-source');
 
-		function toogle(selectedValue) {
-			licenseHelp.innerHTML = selectedValue !== 'self_created' ?
-				'Please check the license of the source and make sure you are allowed to upload the model somewhere else <strong>without having to give attribution</strong>. Please also provide the original source.' :
-				'';
-			modelSource.style.display = selectedValue === 'self_created' ? 'none' : 'block';
-		}
+        function toogle(selectedValue) {
+            licenseHelp.innerHTML = selectedValue !== 'self_created' ?
+                'Please check the license of the source and make sure you are allowed to upload the model somewhere else <strong>without having to give attribution</strong>. Please also provide the original source.' :
+                '';
+            modelSource.style.display = selectedValue === 'self_created' ? 'none' : 'block';
+        }
 
-		radioButtons.forEach(radio => {
-			radio.addEventListener('change', function() {
-				toogle(this.value);
-			});
-		});
+        radioButtons.forEach(radio => {
+            radio.addEventListener('change', function() {
+                toogle(this.value);
+            });
+        });
 
-		const selectedRadio = document.querySelector('input[name="model_source"]:checked');
-		if (selectedRadio) {
-			toogle(selectedRadio.value);
-		}
-	});
+        const selectedRadio = document.querySelector('input[name="model_source"]:checked');
+        if (selectedRadio) {
+            toogle(selectedRadio.value);
+        }
+    });
 </script>
 {% endif %}
 
@@ -232,9 +232,10 @@
 		if (file) {
 			const fileURL = URL.createObjectURL(file);
 
-
-			const options = { "width": "400", "height": "350" }
-
+			initStatsTHREE(fileURL);
+			
+			const options = {"width": "400", "height": "350"}
+			
 			const renderPane = document.getElementById("render-pane");
 			const canvases = document.getElementsByTagName("canvas");
 
@@ -243,7 +244,7 @@
 					renderPane.removeChild(element);
 				}
 			}
-
+			
 			displayPreview("render-pane", fileURL, options, function (gltf) {
 				const stats = new ModelStats();
 				stats.processModel(gltf);
@@ -261,49 +262,49 @@
 
 <script>
 function showGlbErrors() {
-	const errorsDataElement = document.getElementById('glb-errors-data');
-	if (!errorsDataElement) return;
+    const errorsDataElement = document.getElementById('glb-errors-data');
+    if (!errorsDataElement) return;
 
-	const errors = JSON.parse(errorsDataElement.textContent);
+    const errors = JSON.parse(errorsDataElement.textContent);
+    
+    const popup = window.open('', 'GLB Validation Errors', 'popup');
+    
+    let tableContent = '';
+    errors.forEach((error, index) => {
+        tableContent += `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${error.message}</td>
+                <td><code>${error.pointer}</code></td>
+            </tr>
+        `;
+    });
 
-	const popup = window.open('', 'GLB Validation Errors', 'popup');
-
-	let tableContent = '';
-	errors.forEach((error, index) => {
-		tableContent += `
-		<tr>
-			<td>${index + 1}</td>
-			<td>${error.message}</td>
-			<td><code>${error.pointer}</code></td>
-		</tr>
-	`;
-	});
-
-	popup.document.write(`
-	<!DOCTYPE html>
-	<html>
-	<head>
-		<title>GLB Validation Errors</title>
-		<link rel="stylesheet" href="{% static 'mainapp/lib/bootstrap.min.css' %}">
-	</head>
-	<body>
-		<h2>GLB Validation Errors</h2>
-		<p>The following errors were found in the uploaded GLB file:</p>
-		<table class="table table-striped table-bordered">
-			<thead>
-				<tr>
-					<th>#</th>
-					<th>Error Message</th>
-					<th>Node Pointer</th>
-				</tr>
-			</thead>
-			<tbody>
-				${tableContent}
-			</tbody>
-		</table>
-	</body>
-	</html>
-`);
-	popup.document.close();
+    popup.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>GLB Validation Errors</title>
+			<link rel="stylesheet" href="{% static 'mainapp/lib/bootstrap.min.css' %}">
+        </head>
+        <body>
+            <h2>GLB Validation Errors</h2>
+            <p>The following errors were found in the uploaded GLB file:</p>
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Error Message</th>
+                        <th>Node Pointer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableContent}
+                </tbody>
+            </table>
+        </body>
+        </html>
+    `);
+    popup.document.close();
 }
 </script>
