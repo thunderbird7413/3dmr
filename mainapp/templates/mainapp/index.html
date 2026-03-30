@@ -20,7 +20,7 @@
 	{% if models %}
 	<div class="row flex">
 		{% for model in models %}
-			{% include "mainapp/modelpanel.html" %}
+		{% include "mainapp/modelpanel.html" %}
 		{% endfor %}
 	</div>
 	{% endif %}
@@ -44,8 +44,16 @@
 {% block footeradditions %}
 {% vite_asset 'src/main.js' %}
 <script>
-	window.addEventListener("load", function() {
-		setUpRenderPane();
+	window.addEventListener("load", function () {
+		const elems = document.querySelectorAll('div.render-pane');
+		for (const elem of elems) {
+			const model_id = elem.dataset.model;
+			const revision = elem.dataset.revision;
+			const url = "/api/model/" + model_id + "/" + revision;
+
+			const preview = new ModelPreview(elem.id);
+			preview.loadAndDisplay(url);
+		}
 	});
 </script>
 {% endblock %}

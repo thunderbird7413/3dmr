@@ -376,22 +376,5 @@ export class ModelPreview {
 		});
 	}
 }
-
-export function setUpRenderPane({ onLoaded } = {}) {
-	const elems = document.querySelectorAll('div.render-pane');
-
-	for (const elem of elems) {
-		const model_id = elem.dataset.model;
-		const revision = elem.dataset.revision;
-		const url = "/api/model/" + model_id + "/" + revision;
-
-		const preview = new ModelPreview(elem.id);
-		preview.loadAndDisplay(url, onLoaded);
-	}
-}
-
-export function displayPreview(elementId, url, options = {}, onLoaded) {
-	const preview = new ModelPreview(elementId, options);
-	preview.loadAndDisplay(url, onLoaded);
-}
+window.ModelPreview = ModelPreview;
 
