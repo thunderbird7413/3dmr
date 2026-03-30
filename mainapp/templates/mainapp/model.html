@@ -10,6 +10,7 @@
 		width: 750px;
 		height: 480px;
 	}
+
 	.render-pane {
 		min-height: 480px;
 	}
@@ -31,7 +32,8 @@
 		<br>
 		<div class="col-md-12">
 			<ul class="nav nav-tabs" role="tablist">
-				<li class="nav-item active"><a class="nav-link active" data-toggle="tab" href="#view" role="tab">3D View</a></li>
+				<li class="nav-item active"><a class="nav-link active" data-toggle="tab" href="#view" role="tab">3D
+						View</a></li>
 				{% if model.location %}
 				<li class="nav-item"><a class="nav-link active" data-toggle="tab" href="#map" role="tab">Map</a></li>
 				{% endif %}
@@ -42,7 +44,8 @@
 			<div id="model-preview">
 				<div class="tab-content" style="overflow: hidden;">
 					<div class="tab-pane active" id="view" role="tabpanel">
-						<div class="render-pane" data-model="{{ model.model_id }}" data-revision="{{ model.revision }}" id="render-pane{{ model.model_id }}.{{ model.revision }}" style="height: 480px;">
+						<div class="render-pane" data-model="{{ model.model_id }}" data-revision="{{ model.revision }}"
+							id="render-pane{{ model.model_id }}.{{ model.revision }}" style="height: 480px;">
 							<div id="fullscreen-button">&#x26F6;</div>
 							<div id="labels-container"></div>
 							<div id="scale-container" style="display: none;">
@@ -71,7 +74,8 @@
 							<h3 class="panel-title">
 								{{ model.title }}
 								{% if not latest_page %}
-							<small style="cursor:help;" title="This is {% if model.latest %}the latest version{% else %}an older version{% endif %}">
+								<small style="cursor:help;"
+									title="This is {% if model.latest %}the latest version{% else %}an older version{% endif %}">
 									(Revision {{ model.revision }})
 								</small>
 								{% endif %}
@@ -80,9 +84,12 @@
 						</div>
 						<div class="panel-body" style="padding:0px;">
 							<ul class="nav nav-tabs" role="tablist">
-							<li role="presentation" class="active"><a href="#overview" aria-controls="overview" role="tab" data-toggle="tab">Overview</a></li>
-							<li role="presentation"><a href="#stats" aria-controls="stats" role="tab" data-toggle="tab">Stats</a></li>
-							<li role="presentation"><a href="#history" aria-controls="history" role="tab" data-toggle="tab">History</a></li>
+								<li role="presentation" class="active"><a href="#overview" aria-controls="overview"
+										role="tab" data-toggle="tab">Overview</a></li>
+								<li role="presentation"><a href="#stats" aria-controls="stats" role="tab"
+										data-toggle="tab">Stats</a></li>
+								<li role="presentation"><a href="#history" aria-controls="history" role="tab"
+										data-toggle="tab">History</a></li>
 							</ul>
 							<div class="tab-content">
 								<div role="tabpanel" class="tab-pane active" id="overview">
@@ -115,7 +122,6 @@
 					const model_id = elem.dataset.model;
 					const revision = elem.dataset.revision;
 					const url = "/api/model/" + model_id + "/" + revision;
-
 					const preview = new ModelPreview(elem.id);
 					preview.loadAndDisplay(url, function (gltf) {
 						const stats = new ModelStats();
