@@ -231,8 +231,6 @@
 		const file = event.target.files[0];
 		if (file) {
 			const fileURL = URL.createObjectURL(file);
-
-			initStatsTHREE(fileURL);
 			
 			const options = {"width": "400", "height": "350"}
 			
@@ -245,11 +243,12 @@
 				}
 			}
 			
-			const preview = new ModelPreview("render-pane", options);
-			preview.loadAndDisplay(fileURL, function (gltf) {
-				const stats = new ModelStats();
-				stats.processModel(gltf);
-			});
+			document.getElementById("model-preview").style.display = "block";
+				const preview = new ModelPreview("render-pane", options);
+				preview.loadAndDisplay(fileURL, function (gltf) {
+					const stats = new ModelStats();
+					stats.processModel(gltf);
+				});
 		} else {
 			document.getElementById("model-preview").style.display = "none";
 		}
